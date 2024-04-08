@@ -6,8 +6,18 @@ import torch.optim as optim
 from torchvision.models import mobilenet_v2
 import torch.nn.functional as F
 
+import warnings
+warnings.filterwarnings("ignore")
+
 # Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() elif 'mps' if torch.backends.mps.isavailable() else 'cpu')
+device = "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
 
 # CIFAR-10 dataset
 transform_train = transforms.Compose([
@@ -40,7 +50,7 @@ model = model.to(device)
 
 
 # Loss and optimizer
-learning_rate = 0.001
+learning_rate = 0.1
 optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
 
 # Train the model
@@ -51,67 +61,70 @@ lr_reduced32k = False
 lr_reduced48k = False
 lr_reduced64k = False
 
-for epoch in range(num_epochs):
-    model.train()
-    running_loss = 0.0
-    correct = 0
-    total = 0
-    for param_group in optimizer.param_groups:
-        print(f"epoch: {epoch}, lr: {param_group['lr']}")
-        break
-    for i, (images, labels) in enumerate(train_loader):
-        images = images.to(device)
-        labels = labels.to(device)
 
-        # Forward pass
-        outputs = model(images)
-        loss = F.cross_entropy(outputs, labels)
+if __name__ == "__main__":
+    print(device)
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        for param_group in optimizer.param_groups:
+            print(f"epoch: {epoch}, lr: {param_group['lr']}")
+            break
+        for i, (images, labels) in enumerate(train_loader):
+            images = images.to(device)
+            labels = labels.to(device)
 
-        # Backward and optimize
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            # Forward pass
+            outputs = model(images)
+            loss = F.cross_entropy(outputs, labels)
 
-#        iterations += 1
-        if iterations >= 32000 and not lr_reduced32k:
-            learning_rate = learning_rate / 10
-            print(f'new learning rate: {learning_rate}')
-            for param_group in optimizer.param_groups:
-                param_group["lr"] = learning_rate
-            lr_reduced32k = True
-        elif iterations >= 48000 and not lr_reduced48k:
-            learning_rate = learning_rate / 10
-            print(f'new learning rate: {learning_rate}')
-            for param_group in optimizer.param_groups:
-                param_group["lr"] = learning_rate
-            lr_reduced48k = True
-#        elif iterations >= 64000 and not lr_reduced64k:
-#            learning_rate = learning_rate / 10
-#            print(f'new learning rate: {learning_rate}')
-#            for param_group in optimizer.param_groups:
-#                param_group["lr"] = learning_rate
-#            lr_reduced64k = True
+            # Backward and optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        running_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += labels.size(0)
-        correct += predicted.eq(labels).sum().item()
+    #        iterations += 1
+            if iterations >= 32000 and not lr_reduced32k:
+                learning_rate = learning_rate / 10
+                print(f'new learning rate: {learning_rate}')
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] = learning_rate
+                lr_reduced32k = True
+            elif iterations >= 48000 and not lr_reduced48k:
+                learning_rate = learning_rate / 10
+                print(f'new learning rate: {learning_rate}')
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] = learning_rate
+                lr_reduced48k = True
+    #        elif iterations >= 64000 and not lr_reduced64k:
+    #            learning_rate = learning_rate / 10
+    #            print(f'new learning rate: {learning_rate}')
+    #            for param_group in optimizer.param_groups:
+    #                param_group["lr"] = learning_rate
+    #            lr_reduced64k = True
 
-    print('Epoch [{}/{}], Loss: {:.4f}, Train Accuracy: {:.2f}%'.format(
-        epoch+1, num_epochs, running_loss/total_steps, 100.*correct/total))
+            running_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
 
-# Test the model
-model.eval()
-with torch.no_grad():
-    correct = 0
-    total = 0
-    for images, labels in test_loader:
-        images = images.to(device)
-        labels = labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        print('Epoch [{}/{}], Loss: {:.4f}, Train Accuracy: {:.2f}%'.format(
+            epoch+1, num_epochs, running_loss/total_steps, 100.*correct/total))
 
-    print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
+    # Test the model
+    model.eval()
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+        print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
 

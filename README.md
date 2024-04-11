@@ -1,15 +1,3 @@
-Implementation Details:
+Replication of the paper "SimAM: A Simple, Parameter-Free Attention Module for Convolutional Neural Networks" [1] only on the CIFAR datasets.
 
-Padding type: 	Zero Padding
-Padding:		4 pixels each side
-
-Training:		Random horizontal flipping, cropping 32x32 from images
-Evaluation:		Original Image
-
-Optimizer:		SGD
-Momentum:		0.9
-Batch size:		128
-Weight Decay:	5e-4
-Learning Rate:	0.1 (Updated after 32,000 and 48,000 steps by division by 10)
-
-SimAM Lambda:	1e-4 (Searched)
+[1] L. Yang, R.-Y. Zhang, L. Li, and X. Xie. Simam: A simple, parameter-free attention module for convolutional neural networks. In International conference on machine learning, pages 11863–11874. PMLR, 2021.
